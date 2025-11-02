@@ -1,0 +1,4 @@
+Motor A Forward: PB4 (PWM) HIGH, PC10 (DIR) LOW
+Motor A Backward: PB4 (PWM) LOW, PC10 (DIR) HIGH (PWM)
+Motor B Forward: PA7 (PWM) HIGH, PC11 (DIR) LOW  
+Motor B Backward: PA7 (PWM) LOW, PC11 (DIR) HIGH (PWM)
