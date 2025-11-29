@@ -25,6 +25,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Components/ili9341/ili9341.h"
+#include "vl53l0x_app.h"
 #include <stdio.h>
 /* USER CODE END Includes */
 
@@ -207,6 +208,22 @@ int main(void)
   /* Initialize motors */
   Motor_Init();
   printf("L9100S Motor Driver Ready!\r\n");
+  
+  /* Initialize VL53L0X sensors */
+  printf("Initializing VL53L0X sensors (ST API)...\r\n");
+  VL53L0X_Error vl_status = VL53L0X_App_InitAll(&hi2c3);
+  
+  if (vl_status == VL53L0X_ERROR_NONE) {
+      VL53L0X_AppData_t *front = VL53L0X_App_GetData(VL53_FRONT);
+      VL53L0X_AppData_t *left = VL53L0X_App_GetData(VL53_LEFT);
+      VL53L0X_AppData_t *right = VL53L0X_App_GetData(VL53_RIGHT);
+      
+      printf("Front sensor: %s\r\n", front->initialized ? "OK" : "FAILED");
+      printf("Left sensor: %s\r\n", left->initialized ? "OK" : "FAILED");
+      printf("Right sensor: %s\r\n", right->initialized ? "OK" : "FAILED");
+  } else {
+      printf("VL53L0X Init Error: %d\r\n", vl_status);
+  }
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -390,7 +407,7 @@ static void MX_I2C3_Init(void)
 
   /* USER CODE END I2C3_Init 1 */
   hi2c3.Instance = I2C3;
-  hi2c3.Init.ClockSpeed = 100000;
+  hi2c3.Init.ClockSpeed = 400000;
   hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c3.Init.OwnAddress1 = 0;
   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -717,6 +734,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2|MOTOR_A_DIR_Pin|MOTOR_B_DIR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, VL53_FRONT_XSHUT_Pin|VL53_LEFT_XSHUT_Pin|VL53_RIGHT_XSHUT_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -748,6 +768,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USER_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : VL53_FRONT_XSHUT_Pin VL53_LEFT_XSHUT_Pin VL53_RIGHT_XSHUT_Pin */
+  GPIO_InitStruct.Pin = VL53_FRONT_XSHUT_Pin|VL53_LEFT_XSHUT_Pin|VL53_RIGHT_XSHUT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PD12 PD13 */
   GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13;
@@ -1302,12 +1329,14 @@ void StartDefaultTask(void *argument)
   uint8_t rx_byte;
   uint16_t current_speed = 900;  // High speed for weak battery
   char last_command = 'X';  // Track last movement command
+  uint32_t sensor_update_timer = 0;
   
   printf("Micromouse PS4 Controller Ready\r\n");
   printf("USART1 (9600 baud): ESP32 PS4 controller\r\n");
   printf("Commands: 1=Forward, 2=Back, 3=TurnLeft, 4=TurnRight\r\n");
   printf("          5=RotateLeft, 6=RotateRight, 7=PWM+, 8=PWM-, 0=Stop\r\n");
   printf("Initial speed: %d (90%%)\r\n", current_speed);
+  printf("VL53L0X sensors active\r\n");
   
   /* Infinite loop */
   for(;;)
@@ -1389,6 +1418,21 @@ void StartDefaultTask(void *argument)
       
       /* Turn off red LED after processing */
       HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
+    }
+    
+    /* Update distance sensors every 500ms (5 cycles @ 100ms delay) */
+    if (HAL_GetTick() - sensor_update_timer >= 500) {
+      sensor_update_timer = HAL_GetTick();
+      VL53L0X_App_UpdateAllDistances();
+      
+      // Uncomment to see sensor values in console:
+      /*
+      VL53L0X_AppData_t *front = VL53L0X_App_GetData(VL53_FRONT);
+      VL53L0X_AppData_t *left = VL53L0X_App_GetData(VL53_LEFT);
+      VL53L0X_AppData_t *right = VL53L0X_App_GetData(VL53_RIGHT);
+      printf("Sensors [mm]: F=%d L=%d R=%d\r\n", 
+             front->distance_mm, left->distance_mm, right->distance_mm);
+      */
     }
     
     /* LED blink indicator - green LED shows task is running */

@@ -65,6 +65,46 @@
 			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/Core/Src/stm32f4xx_it.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/vl53l0x_api.c</name>
+			<type>1</type>
+			<location>c:/Users/User/Desktop/Proiect_uC_Masina/Proiect_uC/Drivers/VL53L0X_1.0.4/Api/core/src/vl53l0x_api.c</location>
+		</link>
+		<link>
+			<name>Application/User/vl53l0x_api_calibration.c</name>
+			<type>1</type>
+			<location>c:/Users/User/Desktop/Proiect_uC_Masina/Proiect_uC/Drivers/VL53L0X_1.0.4/Api/core/src/vl53l0x_api_calibration.c</location>
+		</link>
+		<link>
+			<name>Application/User/vl53l0x_api_core.c</name>
+			<type>1</type>
+			<location>c:/Users/User/Desktop/Proiect_uC_Masina/Proiect_uC/Drivers/VL53L0X_1.0.4/Api/core/src/vl53l0x_api_core.c</location>
+		</link>
+		<link>
+			<name>Application/User/vl53l0x_api_ranging.c</name>
+			<type>1</type>
+			<location>c:/Users/User/Desktop/Proiect_uC_Masina/Proiect_uC/Drivers/VL53L0X_1.0.4/Api/core/src/vl53l0x_api_ranging.c</location>
+		</link>
+		<link>
+			<name>Application/User/vl53l0x_api_strings.c</name>
+			<type>1</type>
+			<location>c:/Users/User/Desktop/Proiect_uC_Masina/Proiect_uC/Drivers/VL53L0X_1.0.4/Api/core/src/vl53l0x_api_strings.c</location>
+		</link>
+		<link>
+			<name>Application/User/vl53l0x_app.c</name>
+			<type>1</type>
+			<location>c:/Users/User/Desktop/Proiect_uC_Masina/Proiect_uC/Core/Src/vl53l0x_app.c</location>
+		</link>
+		<link>
+			<name>Application/User/vl53l0x_i2c_platform_stm32.c</name>
+			<type>1</type>
+			<location>c:/Users/User/Desktop/Proiect_uC_Masina/Proiect_uC/Drivers/VL53L0X_1.0.4/Api/platform/src/vl53l0x_i2c_platform_stm32.c</location>
+		</link>
+		<link>
+			<name>Application/User/vl53l0x_platform.c</name>
+			<type>1</type>
+			<location>c:/Users/User/Desktop/Proiect_uC_Masina/Proiect_uC/Drivers/VL53L0X_1.0.4/Api/platform/src/vl53l0x_platform.c</location>
+		</link>
+		<link>
 			<name>Drivers/CMSIS/system_stm32f4xx.c</name>
 			<type>1</type>
 			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/Core/Src/system_stm32f4xx.c</locationURI>
