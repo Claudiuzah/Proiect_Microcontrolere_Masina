@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file    vl53l0x_app.h
- * @brief   VL53L0X Application wrapper for STM32
+ * @brief   VL53L0X Application wrapper for STM32 (Pololu library)
  ******************************************************************************
  */
 
@@ -12,8 +12,7 @@
 extern "C" {
 #endif
 
-#include "vl53l0x_api.h"
-#include "vl53l0x_platform.h"
+#include "VL53L0X.h"
 #include "stm32f4xx_hal.h"
 
 /* VL53L0X I2C addresses */
@@ -34,7 +33,7 @@ typedef enum {
 
 /* Sensor data structure */
 typedef struct {
-    VL53L0X_Dev_t device;      // VL53L0X device structure
+    uint8_t i2c_address;       // Current I2C address
     uint16_t distance_mm;      // Distance in millimeters
     uint8_t status;            // Measurement status
     uint32_t last_update;      // Timestamp of last update
@@ -43,8 +42,8 @@ typedef struct {
 
 /* Function prototypes */
 void VL53L0X_App_SetXSHUT(VL53L0X_Sensor_t sensor, uint8_t state);
-VL53L0X_Error VL53L0X_App_InitAll(I2C_HandleTypeDef *hi2c);
-VL53L0X_Error VL53L0X_App_UpdateAllDistances(void);
+bool VL53L0X_App_InitAll(I2C_HandleTypeDef *hi2c);
+void VL53L0X_App_UpdateAllDistances(void);
 VL53L0X_AppData_t* VL53L0X_App_GetData(VL53L0X_Sensor_t sensor);
 
 #ifdef __cplusplus

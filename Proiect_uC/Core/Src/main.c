@@ -210,20 +210,8 @@ int main(void)
   printf("L9100S Motor Driver Ready!\r\n");
   
   /* Initialize VL53L0X sensors */
-  printf("Initializing VL53L0X sensors (ST API)...\r\n");
-  VL53L0X_Error vl_status = VL53L0X_App_InitAll(&hi2c3);
-  
-  if (vl_status == VL53L0X_ERROR_NONE) {
-      VL53L0X_AppData_t *front = VL53L0X_App_GetData(VL53_FRONT);
-      VL53L0X_AppData_t *left = VL53L0X_App_GetData(VL53_LEFT);
-      VL53L0X_AppData_t *right = VL53L0X_App_GetData(VL53_RIGHT);
-      
-      printf("Front sensor: %s\r\n", front->initialized ? "OK" : "FAILED");
-      printf("Left sensor: %s\r\n", left->initialized ? "OK" : "FAILED");
-      printf("Right sensor: %s\r\n", right->initialized ? "OK" : "FAILED");
-  } else {
-      printf("VL53L0X Init Error: %d\r\n", vl_status);
-  }
+  printf("VL53L0X Init...\r\n");
+  VL53L0X_App_InitAll(&hi2c3);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -734,7 +722,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2|MOTOR_A_DIR_Pin|MOTOR_B_DIR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, VL53_FRONT_XSHUT_Pin|VL53_LEFT_XSHUT_Pin|VL53_RIGHT_XSHUT_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOB, VL53_FRONT_XSHUT_Pin|VL53_LEFT_XSHUT_Pin|VL53_RIGHT_XSHUT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13, GPIO_PIN_RESET);
@@ -774,7 +762,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PD12 PD13 */
   GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13;
@@ -1425,14 +1413,23 @@ void StartDefaultTask(void *argument)
       sensor_update_timer = HAL_GetTick();
       VL53L0X_App_UpdateAllDistances();
       
-      // Uncomment to see sensor values in console:
-      /*
-      VL53L0X_AppData_t *front = VL53L0X_App_GetData(VL53_FRONT);
-      VL53L0X_AppData_t *left = VL53L0X_App_GetData(VL53_LEFT);
-      VL53L0X_AppData_t *right = VL53L0X_App_GetData(VL53_RIGHT);
-      printf("Sensors [mm]: F=%d L=%d R=%d\r\n", 
-             front->distance_mm, left->distance_mm, right->distance_mm);
-      */
+      // Print sensor values every 2 seconds
+      static uint8_t print_counter = 0;
+      if (++print_counter >= 4) {  // 4 x 500ms = 2 seconds
+        print_counter = 0;
+        VL53L0X_AppData_t *front = VL53L0X_App_GetData(VL53_FRONT);
+        VL53L0X_AppData_t *left = VL53L0X_App_GetData(VL53_LEFT);
+        VL53L0X_AppData_t *right = VL53L0X_App_GetData(VL53_RIGHT);
+        
+        // Display distances (show ---- for out-of-range/timeout)
+        printf("F=");
+        if (front->distance_mm >= 8000) printf("----"); else printf("%4d", front->distance_mm);
+        printf(" L=");
+        if (left->distance_mm >= 8000) printf("----"); else printf("%4d", left->distance_mm);
+        printf(" R=");
+        if (right->distance_mm >= 8000) printf("----"); else printf("%4d", right->distance_mm);
+        printf(" St:%d,%d,%d\r\n", front->status, left->status, right->status);
+      }
     }
     
     /* LED blink indicator - green LED shows task is running */
