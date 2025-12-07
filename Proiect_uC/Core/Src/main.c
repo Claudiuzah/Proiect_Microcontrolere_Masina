@@ -21,11 +21,11 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "app_touchgfx.h"
+#include "VL53L0X.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Components/ili9341/ili9341.h"
-#include "vl53l0x_app.h"
 #include <stdio.h>
 /* USER CODE END Includes */
 
@@ -56,6 +56,12 @@
 
 #define I2C3_TIMEOUT_MAX                    0x3000 /*<! The value of the maximal timeout for I2C waiting loops */
 #define SPI5_TIMEOUT_MAX                    0x1000
+
+#define VL53L0X_DEFAULT_ADDR 0x52
+#define ADDR_LEFT  0x60
+#define ADDR_FRONT 0x62
+#define ADDR_RIGHT 0x64
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -84,7 +90,7 @@ SDRAM_HandleTypeDef hsdram1;
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for GUI_Task */
@@ -101,6 +107,10 @@ uint8_t isRevD = 0; /* Applicable only for STM32F429I DISCOVERY REVD and above *
 extern TIM_HandleTypeDef htim3;
 uint8_t uart_rx_buffer[100];
 uint8_t uart_rx_index = 0;
+
+volatile uint16_t global_dist_left = 0;
+volatile uint16_t global_dist_front = 0;
+volatile uint16_t global_dist_right = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -116,6 +126,9 @@ static void MX_USART1_UART_Init(void);
 static void MX_TIM3_Init(void);
 void StartDefaultTask(void *argument);
 extern void TouchGFX_Task(void *argument);
+
+void Setup_Multi_Sensors(void);
+
 
 /* USER CODE BEGIN PFP */
 static void BSP_SDRAM_Initialization_Sequence(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *Command);
@@ -145,6 +158,8 @@ void                      IOE_Delay(uint32_t Delay);
 void                      IOE_Write(uint8_t Addr, uint8_t Reg, uint8_t Value);
 uint8_t                   IOE_Read(uint8_t Addr, uint8_t Reg);
 uint16_t                  IOE_ReadMultiple(uint8_t Addr, uint8_t Reg, uint8_t *pBuffer, uint16_t Length);
+
+
 
 /* USER CODE END PFP */
 
@@ -207,11 +222,10 @@ int main(void)
   
   /* Initialize motors */
   Motor_Init();
-  printf("L9100S Motor Driver Ready!\r\n");
-  
-  /* Initialize VL53L0X sensors */
-  printf("VL53L0X Init...\r\n");
-  VL53L0X_App_InitAll(&hi2c3);
+  /* Initialize sensors */
+
+  Setup_Multi_Sensors();
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -257,6 +271,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -395,7 +411,7 @@ static void MX_I2C3_Init(void)
 
   /* USER CODE END I2C3_Init 1 */
   hi2c3.Instance = I2C3;
-  hi2c3.Init.ClockSpeed = 400000;
+  hi2c3.Init.ClockSpeed = 100000;
   hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c3.Init.OwnAddress1 = 0;
   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -719,10 +735,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(SPI5_NCS_GPIO_Port, SPI5_NCS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2|MOTOR_A_DIR_Pin|MOTOR_B_DIR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2|XSHUT_LEFT_Pin|MOTOR_A_DIR_Pin|MOTOR_B_DIR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, VL53_FRONT_XSHUT_Pin|VL53_LEFT_XSHUT_Pin|VL53_RIGHT_XSHUT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, XSHUT_FRONT_Pin|XSHUT_RIGHT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13, GPIO_PIN_RESET);
@@ -737,8 +753,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SPI5_NCS_Pin MOTOR_A_DIR_Pin MOTOR_B_DIR_Pin */
-  GPIO_InitStruct.Pin = SPI5_NCS_Pin|MOTOR_A_DIR_Pin|MOTOR_B_DIR_Pin;
+  /*Configure GPIO pins : SPI5_NCS_Pin XSHUT_LEFT_Pin MOTOR_A_DIR_Pin MOTOR_B_DIR_Pin */
+  GPIO_InitStruct.Pin = SPI5_NCS_Pin|XSHUT_LEFT_Pin|MOTOR_A_DIR_Pin|MOTOR_B_DIR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -757,12 +773,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USER_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : VL53_FRONT_XSHUT_Pin VL53_LEFT_XSHUT_Pin VL53_RIGHT_XSHUT_Pin */
-  GPIO_InitStruct.Pin = VL53_FRONT_XSHUT_Pin|VL53_LEFT_XSHUT_Pin|VL53_RIGHT_XSHUT_Pin;
+  /*Configure GPIO pins : XSHUT_FRONT_Pin XSHUT_RIGHT_Pin */
+  GPIO_InitStruct.Pin = XSHUT_FRONT_Pin|XSHUT_RIGHT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PD12 PD13 */
   GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13;
@@ -1302,6 +1318,62 @@ void Motor_RotateRight(uint16_t speed)
   printf("Rotate right\r\n");
 }
 
+void Setup_Multi_Sensors(void) {
+	setTimeout(500);
+    printf("Configurare senzori (Stanga=PC3, Fata=PA1, Dreapta=PA5)...\r\n");
+
+    // 1. Resetare totală (Toți pinii pe LOW)
+    HAL_GPIO_WritePin(GPIOC, XSHUT_LEFT_Pin, GPIO_PIN_RESET);   // PC3
+    HAL_GPIO_WritePin(GPIOA, XSHUT_FRONT_Pin|XSHUT_RIGHT_Pin, GPIO_PIN_RESET); // PA1, PA5
+    HAL_Delay(50);
+
+    // --- SENZOR STANGA (PC3) ---
+    HAL_GPIO_WritePin(GPIOC, XSHUT_LEFT_Pin, GPIO_PIN_SET); // Pornim PC3
+    HAL_Delay(50); // Asteptam sa porneasca
+
+    VL53L0X_SetTargetAddress(VL53L0X_DEFAULT_ADDR);
+
+    // Încercăm inițializarea. Dacă eșuează, îl OPRIM la loc!
+    if(initVL53L0X(0, &hi2c3)) {
+        setAddress_VL53L0X(ADDR_LEFT);
+        VL53L0X_SetTargetAddress(ADDR_LEFT);
+        printf("Senzor Stanga (PC3) OK!\r\n");
+    } else {
+        printf("Eroare Senzor Stanga! Il dezactivez.\r\n");
+        HAL_GPIO_WritePin(GPIOC, XSHUT_LEFT_Pin, GPIO_PIN_RESET); // <--- FIX CRITIC
+    }
+
+    // --- SENZOR FATA (PA1) ---
+    HAL_GPIO_WritePin(GPIOA, XSHUT_FRONT_Pin, GPIO_PIN_SET); // Pornim PA1
+    HAL_Delay(50);
+
+    VL53L0X_SetTargetAddress(VL53L0X_DEFAULT_ADDR);
+
+    if(initVL53L0X(0, &hi2c3)) {
+        setAddress_VL53L0X(ADDR_FRONT);
+        VL53L0X_SetTargetAddress(ADDR_FRONT);
+        printf("Senzor Fata (PA1) OK!\r\n");
+    } else {
+        printf("Eroare Senzor Fata! Il dezactivez.\r\n");
+        HAL_GPIO_WritePin(GPIOA, XSHUT_FRONT_Pin, GPIO_PIN_RESET); // <--- FIX CRITIC
+    }
+
+    // --- SENZOR DREAPTA (PA5) ---
+    HAL_GPIO_WritePin(GPIOA, XSHUT_RIGHT_Pin, GPIO_PIN_SET); // Pornim PA5
+    HAL_Delay(50);
+
+    VL53L0X_SetTargetAddress(VL53L0X_DEFAULT_ADDR);
+
+    if(initVL53L0X(0, &hi2c3)) {
+        setAddress_VL53L0X(ADDR_RIGHT);
+        VL53L0X_SetTargetAddress(ADDR_RIGHT);
+        printf("Senzor Dreapta (PA5) OK!\r\n");
+    } else {
+        printf("Eroare Senzor Dreapta! Il dezactivez.\r\n");
+        HAL_GPIO_WritePin(GPIOA, XSHUT_RIGHT_Pin, GPIO_PIN_RESET); // <--- FIX CRITIC
+    }
+}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1315,16 +1387,16 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   uint8_t rx_byte;
-  uint16_t current_speed = 900;  // High speed for weak battery
+  uint16_t current_speed = 500;  // High speed for weak battery
   char last_command = 'X';  // Track last movement command
-  uint32_t sensor_update_timer = 0;
   
+  uint16_t dist_st = 0, dist_fa = 0, dist_dr = 0;
+
   printf("Micromouse PS4 Controller Ready\r\n");
   printf("USART1 (9600 baud): ESP32 PS4 controller\r\n");
   printf("Commands: 1=Forward, 2=Back, 3=TurnLeft, 4=TurnRight\r\n");
   printf("          5=RotateLeft, 6=RotateRight, 7=PWM+, 8=PWM-, 0=Stop\r\n");
   printf("Initial speed: %d (90%%)\r\n", current_speed);
-  printf("VL53L0X sensors active\r\n");
   
   /* Infinite loop */
   for(;;)
@@ -1408,30 +1480,27 @@ void StartDefaultTask(void *argument)
       HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
     }
     
-    /* Update distance sensors every 500ms (5 cycles @ 100ms delay) */
-    if (HAL_GetTick() - sensor_update_timer >= 500) {
-      sensor_update_timer = HAL_GetTick();
-      VL53L0X_App_UpdateAllDistances();
-      
-      // Print sensor values every 2 seconds
-      static uint8_t print_counter = 0;
-      if (++print_counter >= 4) {  // 4 x 500ms = 2 seconds
-        print_counter = 0;
-        VL53L0X_AppData_t *front = VL53L0X_App_GetData(VL53_FRONT);
-        VL53L0X_AppData_t *left = VL53L0X_App_GetData(VL53_LEFT);
-        VL53L0X_AppData_t *right = VL53L0X_App_GetData(VL53_RIGHT);
-        
-        // Display distances (show ---- for out-of-range/timeout)
-        printf("F=");
-        if (front->distance_mm >= 8000) printf("----"); else printf("%4d", front->distance_mm);
-        printf(" L=");
-        if (left->distance_mm >= 8000) printf("----"); else printf("%4d", left->distance_mm);
-        printf(" R=");
-        if (right->distance_mm >= 8000) printf("----"); else printf("%4d", right->distance_mm);
-        printf(" St:%d,%d,%d\r\n", front->status, left->status, right->status);
-      }
-    }
-    
+
+    // 1. Citim Stanga
+        VL53L0X_SetTargetAddress(ADDR_LEFT);
+        dist_st = readRangeSingleMillimeters(NULL);
+
+        // 2. Citim Fata
+        VL53L0X_SetTargetAddress(ADDR_FRONT);
+        dist_fa = readRangeSingleMillimeters(NULL);
+
+        // 3. Citim Dreapta
+        VL53L0X_SetTargetAddress(ADDR_RIGHT);
+        dist_dr = readRangeSingleMillimeters(NULL);
+
+        // Debug pe seriala
+        printf("Diste: L=%d mm, F=%d mm, R=%d mm\r\n", dist_st, dist_fa, dist_dr);
+
+        // 4. Actualizam variabilele globale pentru TouchGFX
+        global_dist_left = dist_st;
+        global_dist_front = dist_fa;
+        global_dist_right = dist_dr;
+
     /* LED blink indicator - green LED shows task is running */
     HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
     

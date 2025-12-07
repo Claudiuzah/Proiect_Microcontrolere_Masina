@@ -11,6 +11,10 @@ public:
     virtual ~Screen1View() {}
     virtual void setupScreen();
     virtual void tearDownScreen();
+
+    void updateDistanceView(uint16_t left, uint16_t front, uint16_t right);
+
+    
 protected:
 };
 

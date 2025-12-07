@@ -5,6 +5,17 @@
   </Languages>
   <Texts>
     <TextGroup Id="Group1" />
+    <TextGroup Id="Unsorted">
+      <Text Id="__SingleUse_PT1C" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">Right: &lt;value&gt;</Translation>
+      </Text>
+      <Text Id="__SingleUse_URSE" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">Left: &lt;value&gt;</Translation>
+      </Text>
+      <Text Id="__SingleUse_7E9Q" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">Front: &lt;value&gt;</Translation>
+      </Text>
+    </TextGroup>
   </Texts>
   <Typographies>
     <Typography Id="Default" Font="verdana.ttf" Size="20" Bpp="4" IsVector="no" Direction="LTR" FallbackCharacter="?" />

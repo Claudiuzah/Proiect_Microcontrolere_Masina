@@ -16,3 +16,8 @@ void Screen1Presenter::deactivate()
 {
 
 }
+
+void Screen1Presenter::updateSensors(uint16_t left, uint16_t front, uint16_t right)
+{
+    view.updateDistanceView(left, front, right);
+}

@@ -25,6 +25,8 @@ public:
      */
     virtual void deactivate();
 
+    virtual void updateSensors(uint16_t left, uint16_t front, uint16_t right);
+
     virtual ~Screen1Presenter() {}
 
 private:
