@@ -6,13 +6,40 @@
   <Texts>
     <TextGroup Id="Group1" />
     <TextGroup Id="Unsorted">
-      <Text Id="__SingleUse_PT1C" Alignment="Left" TypographyId="Default">
+      <Text Id="__SingleUse_OCXX" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">0</Translation>
+      </Text>
+      <Text Id="__SingleUse_83BB" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">&lt;value&gt;</Translation>
+      </Text>
+      <Text Id="__SingleUse_4TWI" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">0</Translation>
+      </Text>
+      <Text Id="__SingleUse_77W4" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">&lt;value&gt;</Translation>
+      </Text>
+      <Text Id="__SingleUse_EACC" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">0</Translation>
+      </Text>
+      <Text Id="__SingleUse_A08C" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">Dist_R</Translation>
+      </Text>
+      <Text Id="__SingleUse_DR67" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">Dist_L</Translation>
+      </Text>
+      <Text Id="__SingleUse_GPJG" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">Dist_F</Translation>
+      </Text>
+      <Text Id="__SingleUse_0GXK" Alignment="Left" TypographyId="Default">
+        <Translation Language="GB">&lt;value&gt;</Translation>
+      </Text>
+      <Text Id="textRight" Alignment="Left" TypographyId="Default">
         <Translation Language="GB">Right: &lt;value&gt;</Translation>
       </Text>
-      <Text Id="__SingleUse_URSE" Alignment="Left" TypographyId="Default">
+      <Text Id="textLeft" Alignment="Left" TypographyId="Default">
         <Translation Language="GB">Left: &lt;value&gt;</Translation>
       </Text>
-      <Text Id="__SingleUse_7E9Q" Alignment="Left" TypographyId="Default">
+      <Text Id="textFront" Alignment="Left" TypographyId="Default">
         <Translation Language="GB">Front: &lt;value&gt;</Translation>
       </Text>
     </TextGroup>

@@ -66,6 +66,10 @@ void Motor_TurnLeft(uint16_t speed);
 void Motor_TurnRight(uint16_t speed);
 void Motor_RotateLeft(uint16_t speed);
 void Motor_RotateRight(uint16_t speed);
+
+/* VL53L0X Sensor functions */
+void Setup_Multi_Sensors(void);
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

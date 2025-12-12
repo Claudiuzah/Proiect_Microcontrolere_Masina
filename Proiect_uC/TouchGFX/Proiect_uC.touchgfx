@@ -9,50 +9,84 @@
             "Name": "scalableImage1",
             "Width": 240,
             "Height": 320,
-            "Filename": "__generated\\glass_theme_images_previews_preview8.png",
+            "Filename": "__generated\\glass_theme_images_backgrounds_480x800_burly_layers.png",
             "ScalingAlgorithm": "Nearest-neighbor"
           },
           {
             "Type": "TextArea",
-            "Name": "textFront",
-            "Y": 46,
-            "Width": 70,
+            "Name": "Stare_Senzor_F",
+            "X": 99,
+            "Y": 24,
+            "Width": 13,
             "Height": 24,
-            "TextId": "__SingleUse_7E9Q",
+            "TextId": "__SingleUse_77W4",
             "TextRotation": "0",
             "AutoSize": true,
             "Wildcard1": {
+              "TextId": "__SingleUse_4TWI",
               "UseBuffer": true,
               "BufferSize": 10
             }
           },
           {
             "Type": "TextArea",
-            "Name": "textLeft",
-            "Y": 26,
-            "Width": 54,
+            "Name": "textArea1_1",
+            "Width": 65,
             "Height": 24,
-            "TextId": "__SingleUse_URSE",
+            "TextId": "__SingleUse_A08C",
+            "TextRotation": "0",
+            "AutoSize": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "Stare_Senzor_R",
+            "X": 99,
+            "Width": 13,
+            "Height": 24,
+            "TextId": "__SingleUse_0GXK",
             "TextRotation": "0",
             "AutoSize": true,
             "Wildcard1": {
+              "TextId": "__SingleUse_EACC",
               "UseBuffer": true,
               "BufferSize": 10
             }
           },
           {
             "Type": "TextArea",
-            "Name": "textRight",
-            "Y": 66,
-            "Width": 68,
+            "Name": "Stare_Senzor_L",
+            "X": 99,
+            "Y": 48,
+            "Width": 13,
             "Height": 24,
-            "TextId": "__SingleUse_PT1C",
+            "TextId": "__SingleUse_83BB",
             "TextRotation": "0",
             "AutoSize": true,
             "Wildcard1": {
+              "TextId": "__SingleUse_OCXX",
               "UseBuffer": true,
               "BufferSize": 10
             }
+          },
+          {
+            "Type": "TextArea",
+            "Name": "textArea2",
+            "Y": 24,
+            "Width": 63,
+            "Height": 24,
+            "TextId": "__SingleUse_GPJG",
+            "TextRotation": "0",
+            "AutoSize": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "textArea3",
+            "Y": 48,
+            "Width": 62,
+            "Height": 24,
+            "TextId": "__SingleUse_DR67",
+            "TextRotation": "0",
+            "AutoSize": true
           }
         ],
         "Interactions": []

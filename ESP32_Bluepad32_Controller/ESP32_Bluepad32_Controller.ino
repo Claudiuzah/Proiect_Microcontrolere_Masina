@@ -179,13 +179,13 @@ void processController(ControllerPtr ctl) {
   }
   
   // Left stick = Turn left/right
-  if (leftStickX < -DEADZONE) {
+  if (rightStickX < -DEADZONE) {
     sendToSTM32('3');
     manualControl = true;
     return;
   }
   
-  if (leftStickX > DEADZONE) {
+  if (rightStickX > DEADZONE) {
     sendToSTM32('4');
     manualControl = true;
     return;

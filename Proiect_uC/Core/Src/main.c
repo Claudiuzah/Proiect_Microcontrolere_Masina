@@ -21,11 +21,11 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "app_touchgfx.h"
-#include "VL53L0X.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Components/ili9341/ili9341.h"
+#include "VL53L0X.h"
 #include <stdio.h>
 /* USER CODE END Includes */
 
@@ -91,13 +91,20 @@ osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
   .stack_size = 256 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for GUI_Task */
 osThreadId_t GUI_TaskHandle;
 const osThreadAttr_t GUI_Task_attributes = {
   .name = "GUI_Task",
   .stack_size = 8192 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for SensorTask */
+osThreadId_t SensorTaskHandle;
+const osThreadAttr_t SensorTask_attributes = {
+  .name = "SensorTask",
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
@@ -108,9 +115,11 @@ extern TIM_HandleTypeDef htim3;
 uint8_t uart_rx_buffer[100];
 uint8_t uart_rx_index = 0;
 
+/* Sensor variables - shared between tasks */
 volatile uint16_t global_dist_left = 0;
 volatile uint16_t global_dist_front = 0;
 volatile uint16_t global_dist_right = 0;
+volatile uint8_t sensors_ready = 0;  /* Flag to indicate sensors are initialized */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -126,9 +135,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_TIM3_Init(void);
 void StartDefaultTask(void *argument);
 extern void TouchGFX_Task(void *argument);
-
-void Setup_Multi_Sensors(void);
-
+void StartSensorTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 static void BSP_SDRAM_Initialization_Sequence(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *Command);
@@ -222,9 +229,12 @@ int main(void)
   
   /* Initialize motors */
   Motor_Init();
+  printf("L9100S Motor Driver Ready!\r\n");
+  
   /* Initialize sensors */
-
   Setup_Multi_Sensors();
+  sensors_ready = 1;  /* Mark sensors as initialized */
+  printf("VL53L0X Sensors Ready!\r\n");
 
   /* USER CODE END 2 */
 
@@ -253,6 +263,9 @@ int main(void)
 
   /* creation of GUI_Task */
   GUI_TaskHandle = osThreadNew(TouchGFX_Task, NULL, &GUI_Task_attributes);
+
+  /* creation of SensorTask */
+  SensorTaskHandle = osThreadNew(StartSensorTask, NULL, &SensorTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -753,8 +766,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SPI5_NCS_Pin XSHUT_LEFT_Pin MOTOR_A_DIR_Pin MOTOR_B_DIR_Pin */
-  GPIO_InitStruct.Pin = SPI5_NCS_Pin|XSHUT_LEFT_Pin|MOTOR_A_DIR_Pin|MOTOR_B_DIR_Pin;
+  /*Configure GPIO pins : SPI5_NCS_Pin XSHUT_LEFT_Pin */
+  GPIO_InitStruct.Pin = SPI5_NCS_Pin|XSHUT_LEFT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -786,6 +799,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : MOTOR_A_DIR_Pin MOTOR_B_DIR_Pin */
+  GPIO_InitStruct.Pin = MOTOR_A_DIR_Pin|MOTOR_B_DIR_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD3_Pin LD4_Pin */
   GPIO_InitStruct.Pin = LD3_Pin|LD4_Pin;
@@ -1149,20 +1169,20 @@ PUTCHAR_PROTOTYPE
 void Motor_Init(void)
 {
   printf("Initializing motors...\r\n");
-  
+
   /* Start PWM for both motors */
   if(HAL_TIM_PWM_Start(&htim3, MOTOR_A_PWM_CHANNEL) == HAL_OK) {
     printf("Motor A PWM started on PB4\r\n");
   } else {
     printf("ERROR: Motor A PWM failed!\r\n");
   }
-  
+
   if(HAL_TIM_PWM_Start(&htim3, MOTOR_B_PWM_CHANNEL) == HAL_OK) {
     printf("Motor B PWM started on PA7\r\n");
   } else {
     printf("ERROR: Motor B PWM failed!\r\n");
   }
-  
+
   /* Initialize direction pins to LOW */
   HAL_GPIO_WritePin(MOTOR_A_DIR_GPIO_Port, MOTOR_A_DIR_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(MOTOR_B_DIR_GPIO_Port, MOTOR_B_DIR_Pin, GPIO_PIN_RESET);
@@ -1173,7 +1193,7 @@ void Motor_Init(void)
   __HAL_TIM_SET_COMPARE(&htim3, MOTOR_B_PWM_CHANNEL, 0);
   printf("Initial speed set to 0\r\n");
   
-  printf("Motors initialized successfully!\r\n");
+//  printf("Motors initialized successfully!\r\n");
 }
 
 /**
@@ -1255,7 +1275,7 @@ void Motor_Forward(uint16_t speed)
 {
   Motor_SetSpeed('A', speed);
   Motor_SetSpeed('B', speed);
-  printf("Forward speed: %d\r\n", speed);
+//  printf("Forward speed: %d\r\n", speed);
 }
 
 /**
@@ -1267,7 +1287,7 @@ void Motor_Backward(uint16_t speed)
 {
   Motor_SetSpeed('A', -speed);
   Motor_SetSpeed('B', -speed);
-  printf("Backward speed: %d\r\n", speed);
+//  printf("Backward speed: %d\r\n", speed);
 }
 
 /**
@@ -1279,7 +1299,7 @@ void Motor_TurnLeft(uint16_t speed)
 {
   Motor_SetSpeed('A', speed / 2);  // Left motor slower
   Motor_SetSpeed('B', speed);      // Right motor faster
-  printf("Turn left\r\n");
+//  printf("Turn left\r\n");
 }
 
 /**
@@ -1291,7 +1311,7 @@ void Motor_TurnRight(uint16_t speed)
 {
   Motor_SetSpeed('A', speed);      // Left motor faster
   Motor_SetSpeed('B', speed / 2);  // Right motor slower
-  printf("Turn right\r\n");
+//  printf("Turn right\r\n");
 }
 
 /**
@@ -1303,7 +1323,7 @@ void Motor_RotateLeft(uint16_t speed)
 {
   Motor_SetSpeed('A', -speed);  // Left motor backward
   Motor_SetSpeed('B', speed);   // Right motor forward
-  printf("Rotate left\r\n");
+//  printf("Rotate left\r\n");
 }
 
 /**
@@ -1315,7 +1335,7 @@ void Motor_RotateRight(uint16_t speed)
 {
   Motor_SetSpeed('A', speed);   // Left motor forward
   Motor_SetSpeed('B', -speed);  // Right motor backward
-  printf("Rotate right\r\n");
+//  printf("Rotate right\r\n");
 }
 
 void Setup_Multi_Sensors(void) {
@@ -1387,126 +1407,150 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   uint8_t rx_byte;
-  uint16_t current_speed = 500;  // High speed for weak battery
-  char last_command = 'X';  // Track last movement command
-  
-  uint16_t dist_st = 0, dist_fa = 0, dist_dr = 0;
-
-  printf("Micromouse PS4 Controller Ready\r\n");
-  printf("USART1 (9600 baud): ESP32 PS4 controller\r\n");
+  uint16_t current_speed = 500;
+  char last_command = '0';  
+  printf("RemoteControlTask: Ready for PS4 commands\r\n");
   printf("Commands: 1=Forward, 2=Back, 3=TurnLeft, 4=TurnRight\r\n");
-  printf("          5=RotateLeft, 6=RotateRight, 7=PWM+, 8=PWM-, 0=Stop\r\n");
+  printf("          5=RotateLeft, 6=RotateRight, 7=Speed+, 8=Speed-, 0=Stop\r\n");
   printf("Initial speed: %d (90%%)\r\n", current_speed);
   
-  /* Infinite loop */
+  /* Infinite loop - High priority for instant motor response */
   for(;;)
   {
-    /* Check for UART commands from ESP32 PS4 controller (non-blocking) */
-    if(HAL_UART_Receive(&huart1, &rx_byte, 1, 5) == HAL_OK)
+    /* Check for UART commands with minimal timeout (non-blocking) */
+    if(HAL_UART_Receive(&huart1, &rx_byte, 1, 1) == HAL_OK)
     {
-      /* Visual indicator - blink red LED when receiving */
+      /* Visual indicator - Red LED for command received */
       HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_SET);
       
-      /* Process command - simple number mapping */
+      /* Process command instantly */
       switch(rx_byte)
       {
-        case '1':  // Forward
+        case '1':  /* Forward */
           Motor_Forward(current_speed);
           last_command = '1';
           break;
           
-        case '2':  // Backward / Stop (backward can stop car)
+        case '2':  /* Backward */
           Motor_Backward(current_speed);
           last_command = '2';
           break;
           
-        case '3':  // Turn left
+        case '3':  /* Turn left */
           Motor_TurnLeft(current_speed);
           last_command = '3';
           break;
           
-        case '4':  // Turn right
+        case '4':  /* Turn right */
           Motor_TurnRight(current_speed);
           last_command = '4';
           break;
           
-        case '5':  // Rotate in place LEFT
+        case '5':  /* Rotate left */
           Motor_RotateLeft(current_speed);
           last_command = '5';
           break;
           
-        case '6':  // Rotate in place RIGHT
+        case '6':  /* Rotate right */
           Motor_RotateRight(current_speed);
           last_command = '6';
           break;
           
-        case '7':  // PWM+ (increase speed)
-          if(current_speed < 900) current_speed += 100;
-          // Re-apply last movement command with new speed
-          switch(last_command) {
-            case '1': Motor_Forward(current_speed); break;
-            case '2': Motor_Backward(current_speed); break;
-            case '3': Motor_TurnLeft(current_speed); break;
-            case '4': Motor_TurnRight(current_speed); break;
-            case '5': Motor_RotateLeft(current_speed); break;
-            case '6': Motor_RotateRight(current_speed); break;
+        case '7':  /* Speed up */
+          if(current_speed < 900) {
+            current_speed += 100;
+            printf("Speed+ -> %d\r\n", current_speed);
           }
           break;
           
-        case '8':  // PWM- (decrease speed)
-          if(current_speed > 100) current_speed -= 100;
-          // Re-apply last movement command with new speed
-          switch(last_command) {
-            case '1': Motor_Forward(current_speed); break;
-            case '2': Motor_Backward(current_speed); break;
-            case '3': Motor_TurnLeft(current_speed); break;
-            case '4': Motor_TurnRight(current_speed); break;
-            case '5': Motor_RotateLeft(current_speed); break;
-            case '6': Motor_RotateRight(current_speed); break;
+        case '8':  /* Speed down */
+          if(current_speed > 100) {
+            current_speed -= 100;
+            printf("Speed- -> %d\r\n", current_speed);
           }
           break;
           
-        case '0':  // Stop
+        case '0':  /* Stop */
           Motor_Stop();
           last_command = '0';
           break;
           
         default:
-          // Unknown command - ignore silently
+          /* Unknown command - ignore */
           break;
       }
       
-      /* Turn off red LED after processing */
       HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
     }
     
-
-    // 1. Citim Stanga
-        VL53L0X_SetTargetAddress(ADDR_LEFT);
-        dist_st = readRangeSingleMillimeters(NULL);
-
-        // 2. Citim Fata
-        VL53L0X_SetTargetAddress(ADDR_FRONT);
-        dist_fa = readRangeSingleMillimeters(NULL);
-
-        // 3. Citim Dreapta
-        VL53L0X_SetTargetAddress(ADDR_RIGHT);
-        dist_dr = readRangeSingleMillimeters(NULL);
-
-        // Debug pe seriala
-        printf("Diste: L=%d mm, F=%d mm, R=%d mm\r\n", dist_st, dist_fa, dist_dr);
-
-        // 4. Actualizam variabilele globale pentru TouchGFX
-        global_dist_left = dist_st;
-        global_dist_front = dist_fa;
-        global_dist_right = dist_dr;
-
-    /* LED blink indicator - green LED shows task is running */
-    HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-    
-    osDelay(100); // Run at 10Hz
+    /* Minimal delay - check commands at ~200Hz for instant response */
+    osDelay(5);
   }
   /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_StartSensorTask */
+/**
+* @brief Function implementing the SensorTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSensorTask */
+void StartSensorTask(void *argument)
+{
+  /* USER CODE BEGIN StartSensorTask */
+  uint16_t dist_st, dist_fa, dist_dr;
+  
+  printf("SensorTask: Waiting for sensors to initialize...\r\n");
+  
+  /* Wait for sensors to be initialized in main() */
+  while(!sensors_ready) {
+    osDelay(100);
+  }
+  
+  printf("SensorTask: Started sensor reading loop (10Hz)\r\n");
+  
+  /* Infinite loop - Read sensors periodically */
+  for(;;)
+  {
+    /* Read Left sensor */
+    VL53L0X_SetTargetAddress(ADDR_LEFT);
+    dist_st = readRangeSingleMillimeters(NULL);
+//    if(dist_st == 65535) dist_st = 9999;  /* Timeout/error */
+//    if(dist_st > 2000) dist_st = 2000;    /* Limit max range */
+    
+    /* Small yield for other tasks */
+    osDelay(1);
+    
+    /* Read Front sensor */
+    VL53L0X_SetTargetAddress(ADDR_FRONT);
+    dist_fa = readRangeSingleMillimeters(NULL);
+//    if(dist_fa == 65535) dist_fa = 9999;
+//    if(dist_fa > 2000) dist_fa = 2000;
+    
+    osDelay(1);
+    
+    /* Read Right sensor */
+    VL53L0X_SetTargetAddress(ADDR_RIGHT);
+    dist_dr = readRangeSingleMillimeters(NULL);
+//    if(dist_dr == 65535) dist_dr = 9999;
+//    if(dist_dr > 2000) dist_dr = 2000;
+    
+    /* Update global variables (atomic write on ARM Cortex-M) */
+    global_dist_left = dist_st;
+    global_dist_front = dist_fa;
+    global_dist_right = dist_dr;
+    
+    /* Debug output (comment out if serial slows down system) */
+    // printf("Sensors: L=%d F=%d R=%d\r\n", dist_st, dist_fa, dist_dr);
+    
+    /* LED indicator - Green LED shows sensor task is running */
+    HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+    
+    /* Read sensors at 10Hz (every 100ms) */
+    osDelay(100);
+  }
+  /* USER CODE END StartSensorTask */
 }
 
 /**

@@ -17,13 +17,13 @@ void Screen1View::tearDownScreen()
 
 void Screen1View::updateDistanceView(uint16_t left, uint16_t front, uint16_t right)
 {
-    // Actualizează buffer-ul de text (Unicode::snprintf)
-    Unicode::snprintf(textLeftBuffer, TEXTLEFT_SIZE, "%d", left);
-    Unicode::snprintf(textFrontBuffer, TEXTFRONT_SIZE, "%d", front);
-    Unicode::snprintf(textRightBuffer, TEXTRIGHT_SIZE, "%d", right);
+    // Actualizează buffer-ele de text pentru senzorii VL53L0X
+    Unicode::snprintf(Stare_Senzor_LBuffer, STARE_SENZOR_L_SIZE, "%d", left);
+    Unicode::snprintf(Stare_Senzor_FBuffer, STARE_SENZOR_F_SIZE, "%d", front);
+    Unicode::snprintf(Stare_Senzor_RBuffer, STARE_SENZOR_R_SIZE, "%d", right);
 
-    // Redesenează widget-urile
-    textLeft.invalidate();
-    textFront.invalidate();
-    textRight.invalidate();
+    // Redesenează widget-urile pe ecran
+    Stare_Senzor_L.invalidate();
+    Stare_Senzor_F.invalidate();
+    Stare_Senzor_R.invalidate();
 }
