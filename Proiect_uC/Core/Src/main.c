@@ -1360,7 +1360,7 @@ void Setup_Multi_Sensors(void) {
         printf("Senzor Stanga (PC3) OK!\r\n");
     } else {
         printf("Eroare Senzor Stanga! Il dezactivez.\r\n");
-        HAL_GPIO_WritePin(GPIOC, XSHUT_LEFT_Pin, GPIO_PIN_RESET); // <--- FIX CRITIC
+        HAL_GPIO_WritePin(GPIOC, XSHUT_LEFT_Pin, GPIO_PIN_RESET);
     }
 
     // --- SENZOR FATA (PA1) ---
@@ -1375,7 +1375,7 @@ void Setup_Multi_Sensors(void) {
         printf("Senzor Fata (PA1) OK!\r\n");
     } else {
         printf("Eroare Senzor Fata! Il dezactivez.\r\n");
-        HAL_GPIO_WritePin(GPIOA, XSHUT_FRONT_Pin, GPIO_PIN_RESET); // <--- FIX CRITIC
+        HAL_GPIO_WritePin(GPIOA, XSHUT_FRONT_Pin, GPIO_PIN_RESET);
     }
 
     // --- SENZOR DREAPTA (PA5) ---
@@ -1390,7 +1390,7 @@ void Setup_Multi_Sensors(void) {
         printf("Senzor Dreapta (PA5) OK!\r\n");
     } else {
         printf("Eroare Senzor Dreapta! Il dezactivez.\r\n");
-        HAL_GPIO_WritePin(GPIOA, XSHUT_RIGHT_Pin, GPIO_PIN_RESET); // <--- FIX CRITIC
+        HAL_GPIO_WritePin(GPIOA, XSHUT_RIGHT_Pin, GPIO_PIN_RESET);
     }
 }
 
@@ -1412,7 +1412,7 @@ void StartDefaultTask(void *argument)
   printf("RemoteControlTask: Ready for PS4 commands\r\n");
   printf("Commands: 1=Forward, 2=Back, 3=TurnLeft, 4=TurnRight\r\n");
   printf("          5=RotateLeft, 6=RotateRight, 7=Speed+, 8=Speed-, 0=Stop\r\n");
-  printf("Initial speed: %d (90%%)\r\n", current_speed);
+  printf("Initial speed: %d (50%%)\r\n", current_speed);
   
   /* Infinite loop - High priority for instant motor response */
   for(;;)
@@ -1542,7 +1542,7 @@ void StartSensorTask(void *argument)
     global_dist_right = dist_dr;
     
     /* Debug output (comment out if serial slows down system) */
-    // printf("Sensors: L=%d F=%d R=%d\r\n", dist_st, dist_fa, dist_dr);
+//    printf("Sensors: L=%d F=%d R=%d\r\n", dist_st, dist_fa, dist_dr);
     
     /* LED indicator - Green LED shows sensor task is running */
     HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);

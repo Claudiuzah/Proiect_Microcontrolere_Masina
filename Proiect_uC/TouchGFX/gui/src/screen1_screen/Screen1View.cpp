@@ -8,6 +8,24 @@ Screen1View::Screen1View()
 void Screen1View::setupScreen()
 {
     Screen1ViewBase::setupScreen();
+    
+    // Inițializare buffer-e text cu "0" (folosind Unicode)
+    // Unicode::snprintf(Stare_Senzor_LBuffer, STARE_SENZOR_L_SIZE, "%d", 0);
+    // Unicode::snprintf(Stare_Senzor_FBuffer, STARE_SENZOR_F_SIZE, "%d", 0);
+    // Unicode::snprintf(Stare_Senzor_RBuffer, STARE_SENZOR_R_SIZE, "%d", 0);
+    Unicode::snprintf(Stare_Senzor_LBuffer, STARE_SENZOR_L_SIZE, "12345");
+    Unicode::snprintf(Stare_Senzor_FBuffer, STARE_SENZOR_F_SIZE, "12345");
+    Unicode::snprintf(Stare_Senzor_RBuffer, STARE_SENZOR_R_SIZE, "12345");
+
+
+    // Forțează resync cu widget-urile
+    Stare_Senzor_L.resizeToCurrentText();
+    Stare_Senzor_F.resizeToCurrentText();
+    Stare_Senzor_R.resizeToCurrentText();
+    
+    Stare_Senzor_L.invalidate();
+    Stare_Senzor_F.invalidate();
+    Stare_Senzor_R.invalidate();
 }
 
 void Screen1View::tearDownScreen()

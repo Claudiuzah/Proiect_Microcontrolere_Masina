@@ -14,8 +14,33 @@
           },
           {
             "Type": "TextArea",
+            "Name": "textArea1_1",
+            "Width": 65,
+            "Height": 24,
+            "TextId": "__SingleUse_A08C",
+            "TextRotation": "0",
+            "AutoSize": true
+          },
+          {
+            "Type": "TextArea",
+            "Name": "Stare_Senzor_L",
+            "X": 76,
+            "Y": 48,
+            "Width": 13,
+            "Height": 24,
+            "TextId": "__SingleUse_83BB",
+            "TextRotation": "0",
+            "AutoSize": true,
+            "Wildcard1": {
+              "TextId": "__SingleUse_OCXX",
+              "UseBuffer": true,
+              "BufferSize": 10
+            }
+          },
+          {
+            "Type": "TextArea",
             "Name": "Stare_Senzor_F",
-            "X": 99,
+            "X": 76,
             "Y": 24,
             "Width": 13,
             "Height": 24,
@@ -30,17 +55,8 @@
           },
           {
             "Type": "TextArea",
-            "Name": "textArea1_1",
-            "Width": 65,
-            "Height": 24,
-            "TextId": "__SingleUse_A08C",
-            "TextRotation": "0",
-            "AutoSize": true
-          },
-          {
-            "Type": "TextArea",
             "Name": "Stare_Senzor_R",
-            "X": 99,
+            "X": 76,
             "Width": 13,
             "Height": 24,
             "TextId": "__SingleUse_0GXK",
@@ -48,22 +64,6 @@
             "AutoSize": true,
             "Wildcard1": {
               "TextId": "__SingleUse_EACC",
-              "UseBuffer": true,
-              "BufferSize": 10
-            }
-          },
-          {
-            "Type": "TextArea",
-            "Name": "Stare_Senzor_L",
-            "X": 99,
-            "Y": 48,
-            "Width": 13,
-            "Height": 24,
-            "TextId": "__SingleUse_83BB",
-            "TextRotation": "0",
-            "AutoSize": true,
-            "Wildcard1": {
-              "TextId": "__SingleUse_OCXX",
               "UseBuffer": true,
               "BufferSize": 10
             }

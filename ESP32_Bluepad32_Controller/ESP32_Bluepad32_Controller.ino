@@ -34,7 +34,7 @@ HardwareSerial STM32_SERIAL(1);  // Use UART1 instead of UART2
 // Control parameters
 bool manualControl = false;
 unsigned long lastCommandTime = 0;
-const int DEADZONE = 250;      // Joystick deadzone (out of 512) - HIGH for stick drift
+const int DEADZONE = 400;      // Joystick deadzone (out of 512) - HIGH for stick drift
 
 // Last sent command (avoid spamming)
 char lastCommand = '0';
