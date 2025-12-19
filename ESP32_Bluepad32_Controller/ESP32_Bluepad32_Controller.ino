@@ -55,7 +55,7 @@ void sendToSTM32(char cmd) {
     
     // Blink LED
     digitalWrite(LED_PIN, HIGH);
-    delay(50);
+    delay(30);
     digitalWrite(LED_PIN, LOW);
     
     lastCommandTime = millis();

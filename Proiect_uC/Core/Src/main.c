@@ -748,10 +748,11 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(SPI5_NCS_GPIO_Port, SPI5_NCS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2|XSHUT_LEFT_Pin|MOTOR_A_DIR_Pin|MOTOR_B_DIR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2|XSHUT_LEFT_Pin|XSHUT_FRONT_Pin|MOTOR_A_DIR_Pin
+                          |MOTOR_B_DIR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, XSHUT_FRONT_Pin|XSHUT_RIGHT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(XSHUT_RIGHT_GPIO_Port, XSHUT_RIGHT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13, GPIO_PIN_RESET);
@@ -766,8 +767,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SPI5_NCS_Pin XSHUT_LEFT_Pin */
-  GPIO_InitStruct.Pin = SPI5_NCS_Pin|XSHUT_LEFT_Pin;
+  /*Configure GPIO pins : SPI5_NCS_Pin XSHUT_LEFT_Pin XSHUT_FRONT_Pin */
+  GPIO_InitStruct.Pin = SPI5_NCS_Pin|XSHUT_LEFT_Pin|XSHUT_FRONT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -786,12 +787,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USER_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : XSHUT_FRONT_Pin XSHUT_RIGHT_Pin */
-  GPIO_InitStruct.Pin = XSHUT_FRONT_Pin|XSHUT_RIGHT_Pin;
+  /*Configure GPIO pin : XSHUT_RIGHT_Pin */
+  GPIO_InitStruct.Pin = XSHUT_RIGHT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(XSHUT_RIGHT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PD12 PD13 */
   GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13;
@@ -1340,11 +1341,11 @@ void Motor_RotateRight(uint16_t speed)
 
 void Setup_Multi_Sensors(void) {
 	setTimeout(500);
-    printf("Configurare senzori (Stanga=PC3, Fata=PA1, Dreapta=PA5)...\r\n");
+    printf("Configurare senzori (Stanga=PC3, Fata=PC5, Dreapta=PA5)...\r\n");
 
     // 1. Resetare totală (Toți pinii pe LOW)
-    HAL_GPIO_WritePin(GPIOC, XSHUT_LEFT_Pin, GPIO_PIN_RESET);   // PC3
-    HAL_GPIO_WritePin(GPIOA, XSHUT_FRONT_Pin|XSHUT_RIGHT_Pin, GPIO_PIN_RESET); // PA1, PA5
+    HAL_GPIO_WritePin(GPIOC, XSHUT_LEFT_Pin|XSHUT_FRONT_Pin, GPIO_PIN_RESET);   // PC3, PC5
+    HAL_GPIO_WritePin(GPIOA, XSHUT_RIGHT_Pin, GPIO_PIN_RESET); // PA5
     HAL_Delay(50);
 
     // --- SENZOR STANGA (PC3) ---
@@ -1363,8 +1364,8 @@ void Setup_Multi_Sensors(void) {
         HAL_GPIO_WritePin(GPIOC, XSHUT_LEFT_Pin, GPIO_PIN_RESET);
     }
 
-    // --- SENZOR FATA (PA1) ---
-    HAL_GPIO_WritePin(GPIOA, XSHUT_FRONT_Pin, GPIO_PIN_SET); // Pornim PA1
+    // --- SENZOR FATA (PC5) ---
+    HAL_GPIO_WritePin(GPIOC, XSHUT_FRONT_Pin, GPIO_PIN_SET); // Pornim PC5
     HAL_Delay(50);
 
     VL53L0X_SetTargetAddress(VL53L0X_DEFAULT_ADDR);
@@ -1372,10 +1373,10 @@ void Setup_Multi_Sensors(void) {
     if(initVL53L0X(0, &hi2c3)) {
         setAddress_VL53L0X(ADDR_FRONT);
         VL53L0X_SetTargetAddress(ADDR_FRONT);
-        printf("Senzor Fata (PA1) OK!\r\n");
+        printf("Senzor Fata (PC5) OK!\r\n");
     } else {
         printf("Eroare Senzor Fata! Il dezactivez.\r\n");
-        HAL_GPIO_WritePin(GPIOA, XSHUT_FRONT_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(GPIOC, XSHUT_FRONT_Pin, GPIO_PIN_RESET);
     }
 
     // --- SENZOR DREAPTA (PA5) ---

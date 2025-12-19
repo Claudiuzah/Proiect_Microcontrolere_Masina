@@ -87,10 +87,10 @@ void Setup_Multi_Sensors(void);
 #define XSHUT_LEFT_GPIO_Port GPIOC
 #define USER_Pin GPIO_PIN_0
 #define USER_GPIO_Port GPIOA
-#define XSHUT_FRONT_Pin GPIO_PIN_1
-#define XSHUT_FRONT_GPIO_Port GPIOA
 #define XSHUT_RIGHT_Pin GPIO_PIN_5
 #define XSHUT_RIGHT_GPIO_Port GPIOA
+#define XSHUT_FRONT_Pin GPIO_PIN_5
+#define XSHUT_FRONT_GPIO_Port GPIOC
 #define MOTOR_A_DIR_Pin GPIO_PIN_10
 #define MOTOR_A_DIR_GPIO_Port GPIOC
 #define MOTOR_B_DIR_Pin GPIO_PIN_11
